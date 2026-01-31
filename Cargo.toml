@@ -6,4 +6,26 @@ license = "MIT OR Apache-2.0"
 description = "A load testing framework for simulating realistic traffic and measuring system performance."
 repository = "https://github.com/dilico/granita"
 
+[lib]
+name = "granita"
+path = "src/lib.rs"
+
+[[bin]]
+name = "granita"
+path = "src/bin/granita.rs"
+
+[lints.rust]
+unsafe_code = "forbid"
+unreachable_pub = "deny"
+missing_docs = "warn"
+
 [dependencies]
+thiserror = "2.0"
+
+[dev-dependencies]
+http-body-util = "0.1"
+hyper = { version = "1", features = ["full"] }
+hyper-util = { version = "0.1", features = ["full"] }
+mockall = "0.14.0"
+tokio = { version = "1", features = ["full"] }
+wiremock = "0.6.5"
