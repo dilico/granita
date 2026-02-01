@@ -6,6 +6,15 @@
 
 A load testing framework for simulating realistic traffic and measuring system performance.
 
+[![License][license-badge]][license-url]
+[![Build Status][actions-badge]][actions-url]
+
+[license-badge]: https://img.shields.io/github/license/dilico/granita
+[license-url]: https://github.com/dilico/granita/blob/main/LICENSE
+
+[actions-badge]: https://github.com/dilico/granita/actions/workflows/rust.yml/badge.svg
+[actions-url]: https://github.com/dilico/granita/actions/workflows/rust.yml
+
 ## Overview
 
 Granita is a Rust library that provides a simple and flexible API for defining and executing load test scenarios. It allows you to simulate HTTP requests and measure how your system performs under load.
