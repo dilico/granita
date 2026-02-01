@@ -11,10 +11,6 @@ repository = "https://github.com/dilico/granita"
 name = "granita"
 path = "src/lib.rs"
 
-[[bin]]
-name = "granita"
-path = "src/bin/granita.rs"
-
 [lints.rust]
 unsafe_code = "forbid"
 unreachable_pub = "deny"
