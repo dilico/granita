@@ -2,7 +2,7 @@
 name = "granita"
 version = "0.1.0"
 edition = "2021"
-rust-version = "1.75"
+rust-version = "1.77"
 license = "MIT"
 description = "A load testing framework for simulating realistic traffic and measuring system performance."
 repository = "https://github.com/dilico/granita"
