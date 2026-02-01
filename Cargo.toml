@@ -1,7 +1,8 @@
 [package]
 name = "granita"
 version = "0.1.0"
-edition = "2024"
+edition = "2021"
+rust-version = "1.70"
 license = "MIT OR Apache-2.0"
 description = "A load testing framework for simulating realistic traffic and measuring system performance."
 repository = "https://github.com/dilico/granita"
