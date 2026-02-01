@@ -51,7 +51,8 @@ pub(crate) enum RequestExecutorError {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::{HttpRequest, Request, engine::http_client::MockHttpClient};
+    use crate::request::HttpRequest;
+    use crate::{Request, engine::http_client::MockHttpClient};
 
     #[tokio::test]
     async fn execute_get_http_request_succeeds() {

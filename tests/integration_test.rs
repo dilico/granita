@@ -3,10 +3,12 @@
 //! These tests use the public API of the library and make HTTP calls
 //! to a mock server, ensuring the library works correctly end-to-end.
 
-use granita::{Context, HttpRequest, HttpResponse, Request, Response};
+use granita::context::Context;
+use granita::request::{HttpRequest, HttpResponse};
+use granita::{Request, Response};
 use wiremock::{
-    Mock, MockServer, ResponseTemplate,
     matchers::{method, path},
+    Mock, MockServer, ResponseTemplate,
 };
 
 mod common;

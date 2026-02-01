@@ -7,19 +7,26 @@
 //! # Examples
 //!
 //! ```
-//! use granita::{Context, Request, Response};
+//! use granita::{Granita, Request, Response};
 //! ```
 
+/// Builder for Granita.
+pub mod builder;
 /// Context management for load testing.
 pub mod context;
 /// Error types for the load testing framework.
 pub mod error;
+/// Prelude for the load testing framework.
+pub mod prelude;
 /// Request and response types for load testing.
 pub mod request;
+/// Scenario function for load testing.
+pub mod scenario;
 
 mod engine;
 
 // Re-export commonly used types at the crate root
-pub use context::Context;
+
+pub use builder::Granita;
 pub use error::Error;
-pub use request::{HttpRequest, HttpResponse, Request, Response};
+pub use request::{Request, Response};
