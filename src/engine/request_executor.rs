@@ -5,9 +5,9 @@ use mockall::predicate::*;
 use thiserror::Error;
 
 use crate::{
+    Request, Response,
     engine::http_client::{HttpClient, HttpError},
     request::{BuildHttpResponseError, HttpRequestError, HttpResponseBuilder},
-    Request, Response,
 };
 
 pub(crate) struct RequestExecutor {
@@ -52,7 +52,7 @@ pub(crate) enum RequestExecutorError {
 mod tests {
     use super::*;
     use crate::request::HttpRequest;
-    use crate::{engine::http_client::MockHttpClient, Request};
+    use crate::{Request, engine::http_client::MockHttpClient};
 
     #[tokio::test]
     async fn execute_get_http_request_succeeds() {

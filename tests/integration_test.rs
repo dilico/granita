@@ -7,8 +7,8 @@ use granita::context::Context;
 use granita::request::{HttpRequest, HttpResponse};
 use granita::{Request, Response};
 use wiremock::{
-    matchers::{method, path},
     Mock, MockServer, ResponseTemplate,
+    matchers::{method, path},
 };
 
 mod common;
