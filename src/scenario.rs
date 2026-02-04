@@ -1,7 +1,7 @@
-use std::{future::Future, pin::Pin};
+use std::pin::Pin;
 
-use crate::context::Context;
 use crate::Error;
+use crate::context::Context;
 
 /// A scenario for a load test.
 pub(crate) struct Scenario {

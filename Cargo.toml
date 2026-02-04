@@ -1,8 +1,8 @@
 [package]
 name = "granita"
 version = "0.1.0"
-edition = "2021"
-rust-version = "1.70"
+edition = "2024"
+rust-version = "1.85"
 license = "MIT"
 description = "A load testing framework for simulating realistic traffic and measuring system performance."
 repository = "https://github.com/dilico/granita"
@@ -25,4 +25,4 @@ hyper = { version = "1", features = ["full"] }
 hyper-util = { version = "0.1", features = ["full"] }
 mockall = "0.14.0"
 tokio = { version = "1", features = ["full"] }
-wiremock = "0.6.0"
+wiremock = "0.6.5"

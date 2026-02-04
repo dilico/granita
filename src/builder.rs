@@ -1,8 +1,8 @@
-use std::{future::Future, pin::Pin};
+use std::pin::Pin;
 
+use crate::Error;
 use crate::context::Context;
 use crate::scenario::{Scenario, ScenarioFnWrapper};
-use crate::Error;
 
 /// A builder for Granita load tests.
 pub struct Granita {
