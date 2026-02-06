@@ -1,5 +1,3 @@
-version = 3
-
 [advisories]
 deny = true
 
@@ -10,3 +8,7 @@ deny = ["GPL-3.0"]
 
 [bans]
 deny = ["git"]
+
+[sources]
+unknown-registry = "deny"
+unknown-git = "deny"
