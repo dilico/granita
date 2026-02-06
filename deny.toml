@@ -1,15 +1,14 @@
 [advisories]
 # Fail on any security advisory affecting dependencies
-deny = ["RUSTSEC-0000-0000"]
+deny = true
 
 [licenses]
 # Block packages without license info
-deny = ["unknown"]
+unlicensed = "deny"
+# Ensure license is declared and a LICENSE file exists
+allow-osi-fsf-free = "both"
+copyleft = "deny"
 
-[dependencies]
+[bans]
 # Block git dependencies (recommended for published crates)
 deny = ["git"]
-
-[crate]
-# Ensure license is declared and a LICENSE file exists
-deny = ["license-file-missing", "license-not-declared"]
