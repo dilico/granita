@@ -10,8 +10,36 @@ env:
   CARGO_TERM_COLOR: always
 
 jobs:
-  ci:
-    name: CI (${{ matrix.os }}, Rust ${{ matrix.rust }})
+  lint:
+    name: Lint (Rust ${{ matrix.rust }})
+    runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        rust: [1.85.0, stable]
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Rust toolchain
+        run: rustup toolchain install ${{ matrix.rust }} --profile minimal
+
+      - name: Install components
+        run: rustup component add rustfmt clippy --toolchain ${{ matrix.rust }}
+
+      - name: Cache cargo
+        uses: Swatinem/rust-cache@v2
+        with:
+          key: lint-${{ matrix.rust }}
+
+      - name: rustfmt
+        run: cargo +${{ matrix.rust }} fmt -- --check
+
+      - name: clippy
+        run: cargo +${{ matrix.rust }} clippy -- -D warnings
+
+  test:
+    name: Test (${{ matrix.os }}, Rust ${{ matrix.rust }})
     runs-on: ${{ matrix.os }}
 
     strategy:
@@ -23,14 +51,13 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Install Rust components
-        run: rustup component add rustfmt clippy
+      - name: Install Rust toolchain
+        run: rustup toolchain install ${{ matrix.rust }} --profile minimal
 
-      - name: Format check
-        run: cargo fmt -- --check
-
-      - name: Clippy
-        run: cargo clippy -- -D warnings
+      - name: Cache cargo
+        uses: Swatinem/rust-cache@v2
+        with:
+          key: test-${{ matrix.os }}-${{ matrix.rust }}
 
       - name: Build
         run: cargo +${{ matrix.rust }} build --verbose
@@ -39,7 +66,16 @@ jobs:
         run: cargo +${{ matrix.rust }} test --verbose
 
       - name: Doc check
-        run: cargo +${{ matrix.rust }} doc --no-deps --verbose
+        run: cargo +${{ matrix.rust }} doc --no-deps
 
-      - name: Cargo deny
-        run: cargo deny check
+  deny:
+    name: Cargo deny
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Run cargo-deny
+        uses: EmbarkStudios/cargo-deny-action@v1
+        with:
+          command: check
