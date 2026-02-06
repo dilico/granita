@@ -27,6 +27,7 @@ jobs:
         uses: Swatinem/rust-cache@v2
         with:
           key: lint-stable
+          toolchain: stable
 
       - name: rustfmt
         run: cargo +stable fmt -- --check
@@ -54,6 +55,7 @@ jobs:
         uses: Swatinem/rust-cache@v2
         with:
           key: test-${{ matrix.os }}-${{ matrix.rust }}
+          toolchain: ${{ matrix.rust }}
 
       - name: Build
         run: cargo +${{ matrix.rust }} build --verbose
