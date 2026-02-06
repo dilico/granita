@@ -25,12 +25,10 @@ jobs:
           components: clippy, rustfmt
 
       - name: Cache cargo
-        uses: actions-rs/cargo-cache@v2
+        uses: Swatinem/rust-cache@v2
         with:
-          path: |
-            ~/.cargo/registry
-            ~/.cargo/git
-            target
+          key: lint-1.85.0
+          toolchain: 1.85.0
 
       - name: rustfmt
         run: cargo fmt -- --check
@@ -61,12 +59,10 @@ jobs:
         run: rustc --version
 
       - name: Cache cargo
-        uses: actions-rs/cargo-cache@v2
+        uses: Swatinem/rust-cache@v2
         with:
-          path: |
-            ~/.cargo/registry
-            ~/.cargo/git
-            target
+          key: test-${{ matrix.os }}-1.85.0
+          toolchain: 1.85.0
 
       - name: Build
         run: cargo build --verbose
