@@ -11,32 +11,28 @@ env:
 
 jobs:
   lint:
-    name: Lint (Rust ${{ matrix.rust }})
+    name: Lint (stable)
     runs-on: ubuntu-latest
-
-    strategy:
-      matrix:
-        rust: [1.85.0, stable]
 
     steps:
       - uses: actions/checkout@v4
 
-      - name: Install Rust toolchain
-        run: rustup toolchain install ${{ matrix.rust }} --profile minimal
+      - name: Install Rust stable
+        run: rustup toolchain install stable --profile minimal
 
       - name: Install components
-        run: rustup component add rustfmt clippy --toolchain ${{ matrix.rust }}
+        run: rustup component add rustfmt clippy --toolchain stable
 
       - name: Cache cargo
         uses: Swatinem/rust-cache@v2
         with:
-          key: lint-${{ matrix.rust }}
+          key: lint-stable
 
       - name: rustfmt
-        run: cargo +${{ matrix.rust }} fmt -- --check
+        run: cargo +stable fmt -- --check
 
       - name: clippy
-        run: cargo +${{ matrix.rust }} clippy -- -D warnings
+        run: cargo +stable clippy -- -D warnings
 
   test:
     name: Test (${{ matrix.os }}, Rust ${{ matrix.rust }})
