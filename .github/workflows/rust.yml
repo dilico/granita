@@ -31,10 +31,10 @@ jobs:
           toolchain: stable
 
       - name: rustfmt
-        run: cargo fmt -- --check
+        run: cargo +stable fmt -- --check
 
       - name: clippy
-        run: cargo clippy -- -D warnings
+        run: cargo +stable clippy -- -D warnings
 
   test:
     name: Test (${{ matrix.os }}, Rust ${{ matrix.rust }})
@@ -56,6 +56,9 @@ jobs:
           override: true
           components: clippy, rustfmt
 
+      - name: Verify rustc version
+        run: rustc --version
+
       - name: Cache cargo
         uses: Swatinem/rust-cache@v2
         with:
@@ -63,13 +66,13 @@ jobs:
           toolchain: ${{ matrix.rust }}
 
       - name: Build
-        run: cargo build --verbose
+        run: cargo +${{ matrix.rust }} build --verbose
 
       - name: Run tests
-        run: cargo test --verbose
+        run: cargo +${{ matrix.rust }} test --verbose
 
       - name: Doc check
-        run: cargo doc --no-deps
+        run: cargo +${{ matrix.rust }} doc --no-deps
 
   deny:
     name: Cargo deny
