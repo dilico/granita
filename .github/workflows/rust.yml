@@ -17,42 +17,43 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Install Rust stable
+      - name: Install Rust
         uses: actions-rs/toolchain@v1
         with:
-          toolchain: stable
+          toolchain: 1.85.0
           override: true
           components: clippy, rustfmt
 
       - name: Cache cargo
-        uses: Swatinem/rust-cache@v2
+        uses: actions-rs/cargo-cache@v2
         with:
-          key: lint-stable
-          toolchain: stable
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            target
 
       - name: rustfmt
-        run: cargo +stable fmt -- --check
+        run: cargo fmt -- --check
 
       - name: clippy
-        run: cargo +stable clippy -- -D warnings
+        run: cargo clippy -- -D warnings
 
   test:
-    name: Test (${{ matrix.os }}, Rust ${{ matrix.rust }})
+    name: Test (Rust 1.85.0)
     runs-on: ${{ matrix.os }}
 
     strategy:
       fail-fast: false
       matrix:
         os: [ubuntu-latest, macos-latest, windows-latest]
-        rust: [1.85.0, stable]
 
     steps:
       - uses: actions/checkout@v4
 
-      - name: Install Rust toolchain
+      - name: Install Rust
         uses: actions-rs/toolchain@v1
         with:
-          toolchain: ${{ matrix.rust }}
+          toolchain: 1.85.0
           override: true
           components: clippy, rustfmt
 
@@ -60,19 +61,21 @@ jobs:
         run: rustc --version
 
       - name: Cache cargo
-        uses: Swatinem/rust-cache@v2
+        uses: actions-rs/cargo-cache@v2
         with:
-          key: test-${{ matrix.os }}-${{ matrix.rust }}
-          toolchain: ${{ matrix.rust }}
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            target
 
       - name: Build
-        run: cargo +${{ matrix.rust }} build --verbose
+        run: cargo build --verbose
 
-      - name: Run tests
-        run: cargo +${{ matrix.rust }} test --verbose
+      - name: Test
+        run: cargo test --verbose
 
       - name: Doc check
-        run: cargo +${{ matrix.rust }} doc --no-deps
+        run: cargo doc --no-deps
 
   deny:
     name: Cargo deny
