@@ -1,14 +1,12 @@
+version = 3
+
 [advisories]
-# Fail on any security advisory affecting dependencies
 deny = true
 
 [licenses]
-# Block packages without license info
 unlicensed = "deny"
-# Ensure license is declared and a LICENSE file exists
-allow-osi-fsf-free = "both"
-copyleft = "deny"
+allow = ["MIT", "Apache-2.0"]
+deny = ["GPL-3.0"]
 
 [bans]
-# Block git dependencies (recommended for published crates)
 deny = ["git"]
