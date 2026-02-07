@@ -12,8 +12,8 @@ A load testing framework for simulating realistic traffic and measuring system p
 [license-badge]: https://img.shields.io/github/license/dilico/granita
 [license-url]: https://github.com/dilico/granita/blob/main/LICENSE
 
-[actions-badge]: https://github.com/dilico/granita/actions/workflows/rust.yml/badge.svg
-[actions-url]: https://github.com/dilico/granita/actions/workflows/rust.yml
+[actions-badge]: https://github.com/dilico/granita/actions/workflows/ci.yml/badge.svg
+[actions-url]: https://github.com/dilico/granita/actions/workflows/ci.yml
 
 ## Overview
 
