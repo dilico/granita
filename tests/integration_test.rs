@@ -18,11 +18,11 @@ async fn test_http_get_request() {
     let mock_server = MockServer::start().await;
     Mock::given(method("GET"))
         .and(path("/test"))
-        .respond_with(ResponseTemplate::new(200))
+        .respond_with(ResponseTemplate::new(200).set_body_string("some body"))
         .mount(&mock_server)
         .await;
 
-    let base_url = mock_server.uri();
+    let base_url = format!("{}/test", mock_server.uri());
     let request = HttpRequest::get(base_url).build().unwrap();
     let response = Context::new().send(Request::Http(request)).await.unwrap();
 

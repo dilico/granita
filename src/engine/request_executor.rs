@@ -25,7 +25,8 @@ impl RequestExecutor {
     ) -> Result<Response, RequestExecutorError> {
         match request {
             Request::Http(http_request) => {
-                let response = self.http_client.get(&http_request.url).await?;
+                let response =
+                    self.http_client.get(http_request.url.clone()).await?;
                 Ok(Response::Http(
                     HttpResponseBuilder::new()
                         .status(200)
@@ -81,7 +82,11 @@ mod tests {
         let url = "https://example.com";
         let mut mock_http_client = MockHttpClient::default();
         mock_http_client.expect_get().with(always()).times(1).returning(
-            move |_| Box::pin(async { Err(HttpError::GenericError) }),
+            move |_| {
+                Box::pin(async {
+                    Err(HttpError::Uri("some error".to_string()))
+                })
+            },
         );
 
         let executor = RequestExecutor::new(Arc::new(mock_http_client));
@@ -90,9 +95,7 @@ mod tests {
 
         assert!(matches!(
             response,
-            Err(RequestExecutorError::FailedExecution(
-                HttpError::GenericError
-            ))
+            Err(RequestExecutorError::FailedExecution(HttpError::Uri(_)))
         ))
     }
 }
