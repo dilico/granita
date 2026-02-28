@@ -192,7 +192,7 @@ impl MetricsSender {
     }
 
     /// Sends a metrics event.
-    pub(crate) async fn send(&self, event: MetricsEvent) {
+    pub(crate) fn send(&self, event: MetricsEvent) {
         if let Err(TrySendError::Full(event) | TrySendError::Closed(event)) =
             self.sender.try_send(event)
         {
@@ -205,7 +205,7 @@ impl MetricsSender {
                 }
             };
 
-            let mut map = self.dropped_requests.lock().await;
+            let mut map = self.dropped_requests.try_lock().unwrap();
             *map.entry((scenario, request)).or_default() += 1;
         }
     }
@@ -387,20 +387,16 @@ mod tests {
 
         // send some metrics events
         for i in 0..10 {
-            metrics_sender
-                .send(MetricsEvent::RequestStart {
-                    scenario: "test".to_string(),
-                    request: "test".to_string(),
-                })
-                .await;
-            metrics_sender
-                .send(MetricsEvent::RequestEnd {
-                    scenario: "test".to_string(),
-                    request: "test".to_string(),
-                    duration: Duration::from_nanos(i),
-                    succeeded: true,
-                })
-                .await;
+            metrics_sender.send(MetricsEvent::RequestStart {
+                scenario: "test".to_string(),
+                request: "test".to_string(),
+            });
+            metrics_sender.send(MetricsEvent::RequestEnd {
+                scenario: "test".to_string(),
+                request: "test".to_string(),
+                duration: Duration::from_nanos(i),
+                succeeded: true,
+            });
         }
         drop(metrics_sender);
         drain_ack_receiver.await.unwrap();
