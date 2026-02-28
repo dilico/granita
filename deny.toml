@@ -27,6 +27,9 @@ deny = [
     { crate = "cmake", use-instead = "cc" },
     { crate = "windows", reason = "bloated and unnecessary", use-instead = "ideally inline bindings, practically, windows-sys" },
 ]
+skip = [
+    { crate = "base64", reason = "waiting for hdrhistogram dependencies to update" },
+]
 skip-tree = [
     { crate = "windows-sys", reason = "a foundational crate for many that bumps far too frequently to ever have a shared version" },
 ]
