@@ -1,7 +1,12 @@
+use std::collections::HashMap;
 use std::pin::Pin;
+use std::sync::Arc;
+
+use tokio::sync::Mutex;
 
 use crate::Error;
 use crate::context::Context;
+use crate::engine::metrics::{MetricsCollector, MetricsSender};
 use crate::scenario::{Scenario, ScenarioFnWrapper};
 
 /// A builder for Granita load tests.
@@ -68,9 +73,23 @@ impl Granita {
     /// * `Err(error)` - An error occurred during scenario execution.
     pub async fn run(self) -> Result<(), Error> {
         let context = Context::new();
+        let dropped_requests = Arc::new(Mutex::new(HashMap::new()));
+        let (sender, receiver) = tokio::sync::mpsc::channel(10_000); //TODO set channel size to a reasonable value
+        let metrics_sender =
+            MetricsSender::new(sender, dropped_requests.clone()); //TODO use metrics sender to send metrics events
+        let mut metrics_collector =
+            MetricsCollector::new(receiver, dropped_requests.clone());
+        let (drain_ack, drain_ack_receiver) = tokio::sync::oneshot::channel();
+        let metrics_collector_handle = metrics_collector.start(drain_ack);
         for scenario in self.scenarios {
             scenario.func.call(&context).await?;
         }
+        drop(metrics_sender);
+        drain_ack_receiver.await.unwrap();
+        metrics_collector.shutdown();
+        metrics_collector_handle
+            .await
+            .map_err(|err| Error::FailedMetricsCollector(err.to_string()))?;
         Ok(())
     }
 }

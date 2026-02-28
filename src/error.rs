@@ -23,4 +23,7 @@ pub enum Error {
     /// Request execution error
     #[error("Request execution error")]
     FailedRequestExecution,
+    /// Metrics collector error
+    #[error("Metrics collector error: {0}")]
+    FailedMetricsCollector(String),
 }
