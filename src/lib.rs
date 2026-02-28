@@ -30,3 +30,4 @@ mod engine;
 pub use builder::Granita;
 pub use error::Error;
 pub use request::{Request, Response};
+pub use scenario::{Scenario, Step};

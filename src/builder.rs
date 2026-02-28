@@ -1,5 +1,4 @@
 use std::collections::HashMap;
-use std::pin::Pin;
 use std::sync::Arc;
 
 use tokio::sync::Mutex;
@@ -7,7 +6,7 @@ use tokio::sync::Mutex;
 use crate::Error;
 use crate::context::Context;
 use crate::engine::metrics::{MetricsCollector, MetricsSender};
-use crate::scenario::{Scenario, ScenarioFnWrapper};
+use crate::scenario::{Scenario, ScenarioStep};
 
 /// A builder for Granita load tests.
 pub struct Granita {
@@ -21,47 +20,8 @@ impl Granita {
     }
 
     /// Adds a scenario to the builder.
-    ///
-    /// # Arguments
-    ///
-    /// * `name` - The name of the scenario.
-    /// * `scenario` - The scenario function to execute. This function takes a context
-    ///   and returns a future that resolves to a result. The future will be automatically
-    ///   boxed and pinned when added to the builder.
-    ///
-    /// # Returns
-    ///
-    /// * `Self` - The builder for method chaining.
-    ///
-    /// # Example
-    ///
-    /// ```
-    /// use granita::{Granita, Error, Request};
-    /// use granita::request::HttpRequest;
-    /// use granita::scenario_fn;
-    ///
-    /// let granita = Granita::new().scenario("my_scenario", scenario_fn!(|ctx| {
-    ///         let request = HttpRequest::get("https://example.com")
-    ///             .build()
-    ///             .map_err(|_| Error::Configuration("Invalid URL".into()))?;
-    ///         ctx.send(Request::Http(request)).await?;
-    ///         Ok(())
-    ///     }));
-    /// ```
-    pub fn scenario<F>(mut self, name: impl Into<String>, scenario: F) -> Self
-    where
-        F: for<'a> Fn(
-                &'a Context,
-            ) -> Pin<
-                Box<dyn Future<Output = Result<(), Error>> + Send + 'a>,
-            > + Send
-            + Sync
-            + 'static,
-    {
-        self.scenarios.push(Scenario {
-            name: name.into(),
-            func: Box::new(ScenarioFnWrapper { func: scenario }),
-        });
+    pub fn scenario(mut self, scenario: Scenario) -> Self {
+        self.scenarios.push(scenario);
         self
     }
 
@@ -82,7 +42,17 @@ impl Granita {
         let (drain_ack, drain_ack_receiver) = tokio::sync::oneshot::channel();
         let metrics_collector_handle = metrics_collector.start(drain_ack);
         for scenario in self.scenarios {
-            scenario.func.call(&context).await?;
+            let mut previous_responses = Vec::new();
+            for step in scenario.steps {
+                let r = match step {
+                    ScenarioStep::Static(request) => request,
+                    ScenarioStep::Dynamic(step) => {
+                        step.request(&context, &previous_responses).await?
+                    }
+                };
+                let response = context.send(r).await?;
+                previous_responses.push(response);
+            }
         }
         drop(metrics_sender);
         drain_ack_receiver.await.unwrap();
@@ -102,25 +72,31 @@ impl Default for Granita {
 
 #[cfg(test)]
 mod tests {
-    use crate::scenario_fn;
+    use crate::request::HttpRequest;
 
     use super::*;
 
-    #[tokio::test]
-    async fn scenario_adds_scenario() {
+    #[test]
+    fn scenario_adds_scenario() {
         let granita =
-            Granita::new().scenario("test", scenario_fn!(|_ctx| { Ok(()) }));
+            Granita::new().scenario(Scenario::new("scenario").request(
+                HttpRequest::get("https://example.com").build().unwrap(),
+            ));
         assert_eq!(granita.scenarios.len(), 1);
-        assert_eq!(granita.scenarios[0].name, "test");
+        assert_eq!(granita.scenarios[0].name, "scenario");
     }
 
-    #[tokio::test]
-    async fn scenario_adds_multiple_scenarios() {
+    #[test]
+    fn scenario_adds_multiple_scenarios() {
         let granita = Granita::new()
-            .scenario("test1", scenario_fn!(|_ctx| { Ok(()) }))
-            .scenario("test2", scenario_fn!(|_ctx| { Ok(()) }));
+            .scenario(Scenario::new("scenario_1").request(
+                HttpRequest::get("https://example.com").build().unwrap(),
+            ))
+            .scenario(Scenario::new("scenario_2").request(
+                HttpRequest::get("https://example.com").build().unwrap(),
+            ));
         assert_eq!(granita.scenarios.len(), 2);
-        assert_eq!(granita.scenarios[0].name, "test1");
-        assert_eq!(granita.scenarios[1].name, "test2");
+        assert_eq!(granita.scenarios[0].name, "scenario_1");
+        assert_eq!(granita.scenarios[1].name, "scenario_2");
     }
 }

@@ -8,6 +8,12 @@ pub enum Request {
     Http(HttpRequest),
 }
 
+impl From<HttpRequest> for Request {
+    fn from(request: HttpRequest) -> Self {
+        Request::Http(request)
+    }
+}
+
 /// An HTTP request.
 pub struct HttpRequest {
     /// The HTTP method to use.

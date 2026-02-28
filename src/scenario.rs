@@ -1,86 +1,49 @@
 use std::pin::Pin;
 
-use crate::Error;
 use crate::context::Context;
+use crate::{Error, Request, Response};
 
-/// A scenario for a load test.
-pub(crate) struct Scenario {
+/// A scenario is made up a sequence of steps executed in order.
+pub struct Scenario {
     #[allow(dead_code)]
     pub(crate) name: String,
-    pub(crate) func: Box<dyn ScenarioFnTrait + Send + Sync>,
+    pub(crate) steps: Vec<ScenarioStep>,
 }
 
-/// A trait for scenario functions.
-pub(crate) trait ScenarioFnTrait {
-    fn call<'a>(
+/// A step in a scenario, either a static request or a dynamic step.
+pub(crate) enum ScenarioStep {
+    Static(Request),
+    Dynamic(Box<dyn Step + Send + Sync>),
+}
+
+/// A step in a scenario that may produce a request from previous responses.
+///
+/// Implement this trait when a request depends on earlier
+/// responses in the scenario.
+pub trait Step: Send + Sync {
+    /// Produces a request from the step.
+    fn request<'a>(
         &'a self,
         context: &'a Context,
-    ) -> Pin<Box<dyn Future<Output = Result<(), Error>> + Send + 'a>>;
+        previous_responses: &'a [Response],
+    ) -> Pin<Box<dyn Future<Output = Result<Request, Error>> + Send + 'a>>;
 }
 
-/// A function that represents a scenario.
-///
-/// This is a type alias for convenience. The function takes a context and returns
-/// a pinned, boxed future that resolves to a result.
-///
-/// # Arguments
-///
-/// * `context` - The context for the scenario.
-///
-/// # Returns
-///
-/// * A pinned, boxed future that resolves to `Ok(())` on success or `Err(error)` on failure.
-pub type ScenarioFn = for<'a> fn(
-    &'a Context,
-) -> Pin<
-    Box<dyn Future<Output = Result<(), Error>> + Send + 'a>,
->;
-
-/// A wrapper that implements ScenarioFnTrait for any function that returns a boxed future.
-pub(crate) struct ScenarioFnWrapper<F> {
-    pub(crate) func: F,
-}
-
-impl<F> ScenarioFnTrait for ScenarioFnWrapper<F>
-where
-    F: for<'a> Fn(
-            &'a Context,
-        ) -> Pin<
-            Box<dyn Future<Output = Result<(), Error>> + Send + 'a>,
-        > + Send
-        + Sync
-        + 'static,
-{
-    fn call<'a>(
-        &'a self,
-        context: &'a Context,
-    ) -> Pin<Box<dyn Future<Output = Result<(), Error>> + Send + 'a>> {
-        (self.func)(context)
+impl Scenario {
+    /// Creates a new scenario.
+    pub fn new(name: impl Into<String>) -> Self {
+        Self { name: name.into(), steps: Vec::new() }
     }
-}
 
-/// A macro to create a scenario function.
-///
-/// # Arguments
-///
-/// * `ctx` - The context for the scenario.
-/// * `body` - The body of the scenario.
-///
-/// # Returns
-///
-/// * A scenario function that takes a context and returns a pinned, boxed future that resolves to a result.
-///
-/// # Example
-///
-/// ```
-/// use granita::{Granita, scenario_fn};
-///
-/// let granita = Granita::new()
-///     .scenario("test", scenario_fn!(|ctx| { Ok(()) }));
-/// ```
-#[macro_export]
-macro_rules! scenario_fn {
-    (|$ctx:ident| $body: block) => {
-        |$ctx: &$crate::context::Context| Box::pin(async $body)
-    };
+    /// Adds a static request to the scenario.
+    pub fn request(mut self, request: impl Into<Request>) -> Self {
+        self.steps.push(ScenarioStep::Static(request.into()));
+        self
+    }
+
+    /// Adds a dynamic step to the scenario.
+    pub fn step(mut self, step: impl Step + 'static) -> Self {
+        self.steps.push(ScenarioStep::Dynamic(Box::new(step)));
+        self
+    }
 }

@@ -31,42 +31,34 @@ tokio = { version = "1", features = ["full"] }
 
 ## Example
 
-Here's a simple example that demonstrates how to use Granita:
+Define a scenario as a sequence of requests. Add one or more scenarios to a load test, then run.
 
 ```rust
-use granita::{Granita, Request, scenario_fn};
+use granita::{Granita, Scenario};
 use granita::request::HttpRequest;
 
 #[tokio::main]
 async fn main() -> Result<(), granita::Error> {
+    let fetch_homepage = Scenario::new("fetch_homepage")
+        .request(HttpRequest::get("https://example.com")
+        .build()
+        .unwrap());
+
     Granita::new()
-        .scenario("fetch_homepage", scenario_fn!(|ctx| {
-            let request = HttpRequest::get("https://example.com")
-                .build()
-                .map_err(|_| granita::Error::Configuration("Invalid URL".into()))?;
-            
-            let response = ctx.send(Request::Http(request)).await?;
-            
-            // Process response...
-            match response {
-                granita::Response::Http(http_response) => {
-                    println!("Status: {}", http_response.status);
-                }
-            }
-            
-            Ok(())
-        }))
+        .scenario(fetch_homepage)
         .run()
         .await
 }
 ```
 
+For response-dependent steps (e.g. use data from a previous response in the next request), implement the `Step` trait and add steps with `.step(your_step)`.
+
 ## Features
 
-- Simple builder API for defining test scenarios
-- HTTP request/response handling
-- Context management for sharing state between requests
-- Async/await support
+- Simple API: add scenarios and requests
+- Scenarios as ordered sequences of requests and steps
+- Static requests or dynamic steps (implement `Step` for response-dependent requests)
+- HTTP request/response handling and async/await support
 
 ## License
 
