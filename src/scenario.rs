@@ -5,13 +5,18 @@ use crate::{Error, Request, Response};
 
 /// A scenario is made up a sequence of steps executed in order.
 pub struct Scenario {
-    #[allow(dead_code)]
     pub(crate) name: String,
     pub(crate) steps: Vec<ScenarioStep>,
 }
 
-/// A step in a scenario, either a static request or a dynamic step.
-pub(crate) enum ScenarioStep {
+/// A step in a scenario.
+pub(crate) struct ScenarioStep {
+    pub(crate) name: String,
+    pub(crate) request: ScenarioStepRequest,
+}
+
+/// A request in a scenario step, either a static request or a dynamic step.
+pub(crate) enum ScenarioStepRequest {
     Static(Request),
     Dynamic(Box<dyn Step + Send + Sync>),
 }
@@ -36,14 +41,28 @@ impl Scenario {
     }
 
     /// Adds a static request to the scenario.
-    pub fn request(mut self, request: impl Into<Request>) -> Self {
-        self.steps.push(ScenarioStep::Static(request.into()));
+    pub fn request(
+        mut self,
+        name: impl Into<String>,
+        request: impl Into<Request>,
+    ) -> Self {
+        self.steps.push(ScenarioStep {
+            name: name.into(),
+            request: ScenarioStepRequest::Static(request.into()),
+        });
         self
     }
 
     /// Adds a dynamic step to the scenario.
-    pub fn step(mut self, step: impl Step + 'static) -> Self {
-        self.steps.push(ScenarioStep::Dynamic(Box::new(step)));
+    pub fn step(
+        mut self,
+        name: impl Into<String>,
+        step: impl Step + 'static,
+    ) -> Self {
+        self.steps.push(ScenarioStep {
+            name: name.into(),
+            request: ScenarioStepRequest::Dynamic(Box::new(step)),
+        });
         self
     }
 }

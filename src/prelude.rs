@@ -1,1 +1,1 @@
-pub use crate::{Granita, Request, Response};
+pub use crate::{Granita, MetricsSinkType, Request, Response};

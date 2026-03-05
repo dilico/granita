@@ -1,0 +1,9 @@
+[package]
+name = "single-http-request"
+version = "0.1.0"
+edition = "2024"
+rust-version = "1.85"
+
+[dependencies]
+granita = { path = "../.." }
+tokio = { version = "1", features = ["full"] }

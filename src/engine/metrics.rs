@@ -29,6 +29,8 @@ use hdrhistogram::Histogram;
 use tokio::sync::mpsc::error::TrySendError;
 use tokio_util::sync::CancellationToken;
 
+use crate::engine::sinks::console_sink::ConsoleSink;
+
 /// An event that can be recorded in the metrics system.
 #[derive(Debug)]
 pub(crate) enum MetricsEvent {
@@ -367,6 +369,26 @@ impl MetricsCollector {
             request_metrics_snapshot.dropped = *count;
         }
         grouped_metrics_snapshot
+    }
+}
+
+/// A type of metrics sink.
+pub enum MetricsSinkType {
+    /// A sink that prints metrics to the console.
+    Console,
+}
+
+/// A sink for metrics snapshots.
+pub(crate) trait MetricsSink: Send + Sync {
+    /// Sends a metrics snapshot.
+    async fn report(&self, snapshot: &GroupedMetricsSnapshot);
+}
+
+impl MetricsSink for MetricsSinkType {
+    async fn report(&self, snapshot: &GroupedMetricsSnapshot) {
+        match self {
+            MetricsSinkType::Console => ConsoleSink.report(snapshot).await,
+        }
     }
 }
 

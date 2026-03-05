@@ -28,6 +28,7 @@ mod engine;
 // Re-export commonly used types at the crate root
 
 pub use builder::Granita;
+pub use engine::metrics::MetricsSinkType;
 pub use error::Error;
 pub use request::{Request, Response};
 pub use scenario::{Scenario, Step};
