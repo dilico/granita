@@ -20,7 +20,7 @@ updates:
 
       # All runtime dependencies that are safe (patch + minor)
       safe-updates:
-        dependency-type: "direct"
+        dependency-type: "production"
         update-types:
           - patch
           - minor
