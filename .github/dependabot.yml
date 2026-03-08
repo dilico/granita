@@ -1,0 +1,29 @@
+version: 2
+
+updates:
+  - package-ecosystem: "cargo"
+    directory: "/"
+
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "04:00"
+
+    open-pull-requests-limit: 1
+    rebase-strategy: disabled
+
+    groups:
+      # All dev-dependencies go in one PR
+      dev-dependencies:
+        dependency-type: "development"
+        update-types: ["patch", "minor"]
+
+      # All runtime dependencies that are safe (patch + minor)
+      safe-updates:
+        dependency-type: "direct"
+        update-types:
+          - patch
+          - minor
+
+    commit-message:
+      prefix: "deps"
