@@ -26,4 +26,10 @@ pub enum Error {
     /// Metrics collector error
     #[error("Metrics collector error: {0}")]
     FailedMetricsCollector(String),
+    /// Scenario execution error
+    #[error("Scenario execution error: {0}")]
+    FailedScenario(String),
+    /// Scenario iteration execution error
+    #[error("Scenario iteration execution error: {0}")]
+    FailedScenarioIteration(String),
 }

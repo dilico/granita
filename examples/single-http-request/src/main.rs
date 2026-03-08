@@ -1,11 +1,18 @@
-use granita::{Granita, MetricsSinkType, Scenario, request::HttpRequest};
+use granita::{
+    Granita, LoadProfile, MetricsSinkType, Scenario, request::HttpRequest,
+};
 
 #[tokio::main]
 async fn main() {
-    let scenario = Scenario::new("example_scenario").request(
-        "example_request",
-        HttpRequest::get("https://google.com").build().unwrap(),
-    );
+    let scenario = Scenario::new("example_scenario")
+        .request(
+            "example_request",
+            HttpRequest::get("https://google.com").build().unwrap(),
+        )
+        .load_profile(LoadProfile::ConstantIterations {
+            vus: 1,
+            iterations: 10,
+        });
 
     let result = Granita::new()
         .scenario(scenario)

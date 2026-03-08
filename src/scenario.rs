@@ -1,12 +1,13 @@
 use std::pin::Pin;
 
 use crate::context::Context;
-use crate::{Error, Request, Response};
+use crate::{Error, LoadProfile, Request, Response};
 
 /// A scenario is made up a sequence of steps executed in order.
 pub struct Scenario {
     pub(crate) name: String,
     pub(crate) steps: Vec<ScenarioStep>,
+    pub(crate) load_profile: LoadProfile,
 }
 
 /// A step in a scenario.
@@ -37,7 +38,11 @@ pub trait Step: Send + Sync {
 impl Scenario {
     /// Creates a new scenario.
     pub fn new(name: impl Into<String>) -> Self {
-        Self { name: name.into(), steps: Vec::new() }
+        Self {
+            name: name.into(),
+            steps: Vec::new(),
+            load_profile: LoadProfile::RunOnce,
+        }
     }
 
     /// Adds a static request to the scenario.
@@ -63,6 +68,12 @@ impl Scenario {
             name: name.into(),
             request: ScenarioStepRequest::Dynamic(Box::new(step)),
         });
+        self
+    }
+
+    /// Sets the load profile for the scenario.
+    pub fn load_profile(mut self, load_profile: LoadProfile) -> Self {
+        self.load_profile = load_profile;
         self
     }
 }

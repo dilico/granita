@@ -16,6 +16,8 @@ pub mod builder;
 pub mod context;
 /// Error types for the load testing framework.
 pub mod error;
+/// Load profile for the load testing framework.
+pub mod load_profile;
 /// Prelude for the load testing framework.
 pub mod prelude;
 /// Request and response types for load testing.
@@ -30,5 +32,6 @@ mod engine;
 pub use builder::Granita;
 pub use engine::metrics::MetricsSinkType;
 pub use error::Error;
+pub use load_profile::LoadProfile;
 pub use request::{Request, Response};
 pub use scenario::{Scenario, Step};

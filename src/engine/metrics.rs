@@ -213,6 +213,15 @@ impl MetricsSender {
     }
 }
 
+impl Clone for MetricsSender {
+    fn clone(&self) -> Self {
+        Self {
+            sender: self.sender.clone(),
+            dropped_requests: self.dropped_requests.clone(),
+        }
+    }
+}
+
 /// A collector for metrics events.
 pub(crate) struct MetricsCollector {
     receiver: Option<tokio::sync::mpsc::Receiver<MetricsEvent>>,

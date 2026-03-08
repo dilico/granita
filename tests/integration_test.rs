@@ -5,7 +5,7 @@
 
 use granita::context::Context;
 use granita::request::{HttpRequest, HttpResponse};
-use granita::{Request, Response};
+use granita::{Granita, LoadProfile, Request, Response, Scenario};
 use wiremock::{
     Mock, MockServer, ResponseTemplate,
     matchers::{method, path},
@@ -33,4 +33,27 @@ async fn test_http_get_request() {
             assert!(headers.is_empty());
         }
     }
+}
+
+#[tokio::test]
+async fn test_constant_iterations_request_count() {
+    let mock_server = MockServer::start().await;
+    let base_url = format!("{}/test", mock_server.uri());
+
+    Mock::given(method("GET"))
+        .and(path("/test"))
+        .respond_with(ResponseTemplate::new(200).set_body_string("ok"))
+        .expect(4) // 2 VUs × 2 iterations × 1 step
+        .mount(&mock_server)
+        .await;
+
+    let scenario = Scenario::new("constant_iterations_scenario")
+        .request("single_step", HttpRequest::get(base_url).build().unwrap())
+        .load_profile(LoadProfile::ConstantIterations {
+            vus: 2,
+            iterations: 2,
+        });
+
+    let result = Granita::new().scenario(scenario).run().await;
+    result.expect("run should succeed");
 }

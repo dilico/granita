@@ -3,6 +3,7 @@ use std::collections::HashMap;
 use thiserror::Error;
 
 /// A request to be sent to the request executor.
+#[derive(Debug, Clone)]
 pub enum Request {
     /// An HTTP request.
     Http(HttpRequest),
@@ -15,6 +16,7 @@ impl From<HttpRequest> for Request {
 }
 
 /// An HTTP request.
+#[derive(Debug, Clone)]
 pub struct HttpRequest {
     /// The HTTP method to use.
     pub method: Method,
@@ -52,7 +54,7 @@ impl HttpRequest {
 }
 
 /// The HTTP method to use.
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub enum Method {
     /// The GET method.
     Get,

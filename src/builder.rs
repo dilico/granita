@@ -8,7 +8,7 @@ use crate::context::Context;
 use crate::engine::metrics::MetricsSink;
 use crate::engine::metrics::{MetricsCollector, MetricsEvent, MetricsSender};
 use crate::scenario::{Scenario, ScenarioStepRequest};
-use crate::{Error, MetricsSinkType};
+use crate::{Error, LoadProfile, MetricsSinkType};
 
 /// A builder for Granita load tests.
 pub struct Granita {
@@ -41,7 +41,6 @@ impl Granita {
     /// * `Ok(())` - All scenarios succeeded.
     /// * `Err(error)` - An error occurred during scenario execution.
     pub async fn run(self) -> Result<(), Error> {
-        let context = Context::new();
         let dropped_requests = Arc::new(Mutex::new(HashMap::new()));
         let (sender, receiver) = tokio::sync::mpsc::channel(10_000); //TODO set channel size to a reasonable value
         let metrics_sender =
@@ -50,29 +49,52 @@ impl Granita {
             MetricsCollector::new(receiver, dropped_requests.clone());
         let (drain_ack, drain_ack_receiver) = tokio::sync::oneshot::channel();
         let metrics_collector_handle = metrics_collector.start(drain_ack);
+        let mut scenario_handles = Vec::new();
         for scenario in self.scenarios {
-            let mut previous_responses = Vec::new();
-            for step in scenario.steps {
-                let r = match step.request {
-                    ScenarioStepRequest::Static(request) => request,
-                    ScenarioStepRequest::Dynamic(step) => {
-                        step.request(&context, &previous_responses).await?
+            let metrics_sender = metrics_sender.clone();
+            let scenario_handle = tokio::spawn(async move {
+                match scenario.load_profile {
+                    LoadProfile::RunOnce => {
+                        let context = Context::new();
+                        run_scenario(&context, &scenario, &metrics_sender)
+                            .await?;
+                        Ok::<(), Error>(())
                     }
-                };
-                let start_time = Instant::now();
-                metrics_sender.send(MetricsEvent::RequestStart {
-                    scenario: scenario.name.clone(),
-                    request: step.name.clone(),
-                });
-                let response = context.send(r).await?;
-                previous_responses.push(response);
-                metrics_sender.send(MetricsEvent::RequestEnd {
-                    scenario: scenario.name.clone(),
-                    request: step.name.clone(),
-                    duration: start_time.elapsed(),
-                    succeeded: true,
-                });
-            }
+                    LoadProfile::ConstantIterations { vus, iterations } => {
+                        let mut handles = Vec::new();
+                        let scenario = Arc::new(scenario);
+                        for _ in 0..vus {
+                            let scenario = Arc::clone(&scenario);
+                            let metrics_sender = metrics_sender.clone();
+                            let handle = tokio::spawn(async move {
+                                let context = Context::new();
+                                for _ in 0..iterations {
+                                    run_scenario(
+                                        &context,
+                                        &scenario,
+                                        &metrics_sender,
+                                    )
+                                    .await?;
+                                }
+                                Ok::<(), Error>(())
+                            });
+                            handles.push(handle);
+                        }
+                        for handle in handles {
+                            handle.await.map_err(|err| {
+                                Error::FailedScenarioIteration(err.to_string())
+                            })??;
+                        }
+                        Ok::<(), Error>(())
+                    }
+                }
+            });
+            scenario_handles.push(scenario_handle);
+        }
+        for handle in scenario_handles {
+            handle
+                .await
+                .map_err(|err| Error::FailedScenario(err.to_string()))??;
         }
         drop(metrics_sender);
         drain_ack_receiver.await.unwrap();
@@ -86,6 +108,36 @@ impl Granita {
             .map_err(|err| Error::FailedMetricsCollector(err.to_string()))?;
         Ok(())
     }
+}
+
+async fn run_scenario(
+    context: &Context,
+    scenario: &Scenario,
+    metrics_sender: &MetricsSender,
+) -> Result<(), Error> {
+    let mut previous_responses = Vec::new();
+    for step in &scenario.steps {
+        let r = match &step.request {
+            ScenarioStepRequest::Static(request) => request.clone(),
+            ScenarioStepRequest::Dynamic(step) => {
+                step.request(context, &previous_responses).await?
+            }
+        };
+        let start_time = Instant::now();
+        metrics_sender.send(MetricsEvent::RequestStart {
+            scenario: scenario.name.clone(),
+            request: step.name.clone(),
+        });
+        let response = context.send(r).await?;
+        previous_responses.push(response);
+        metrics_sender.send(MetricsEvent::RequestEnd {
+            scenario: scenario.name.clone(),
+            request: step.name.clone(),
+            duration: start_time.elapsed(),
+            succeeded: true,
+        });
+    }
+    Ok(())
 }
 
 impl Default for Granita {
