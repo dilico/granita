@@ -12,7 +12,7 @@ name = "granita"
 path = "src/lib.rs"
 
 [workspace]
-members = [".", "examples/single-http-request"]
+members = [".", "examples/xtask", "examples/single-http-request", "examples/test-server"]
 
 [lints.rust]
 unsafe_code = "forbid"

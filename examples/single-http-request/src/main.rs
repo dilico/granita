@@ -7,11 +7,11 @@ async fn main() {
     let scenario = Scenario::new("example_scenario")
         .request(
             "example_request",
-            HttpRequest::get("https://google.com").build().unwrap(),
+            HttpRequest::get("http://127.0.0.1:3000/granita").build().unwrap(),
         )
         .load_profile(LoadProfile::ConstantIterations {
-            vus: 1,
-            iterations: 10,
+            vus: 100,
+            iterations: 100,
         });
 
     let result = Granita::new()
