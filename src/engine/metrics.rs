@@ -207,8 +207,11 @@ impl MetricsSender {
                 }
             };
 
-            let mut map = self.dropped_requests.try_lock().unwrap();
-            *map.entry((scenario, request)).or_default() += 1;
+            // TODO: increment an AtomicU64 when we fail to lock the dropped requests map
+            // and update the dropped requests count in the map when we succeed to lock it
+            if let Ok(mut map) = self.dropped_requests.try_lock() {
+                *map.entry((scenario, request)).or_default() += 1;
+            }
         }
     }
 }
@@ -336,42 +339,59 @@ impl MetricsCollector {
     /// Gets a snapshot of the grouped metrics.
     pub(crate) async fn get(&self) -> GroupedMetricsSnapshot {
         let mut grouped_metrics_snapshot = GroupedMetricsSnapshot::new();
-        let metrics = self.metrics.lock().await;
-        let dropped_requests = self.dropped_requests.lock().await;
-        for (scenario, scenario_metrics) in metrics.scenarios_metrics.iter() {
-            for (request, request_metrics) in
-                scenario_metrics.requests_metrics.iter()
+        {
+            let metrics = self.metrics.lock().await;
+            for (scenario, scenario_metrics) in
+                metrics.scenarios_metrics.iter()
             {
-                let request_metrics_snapshot =
-                    grouped_metrics_snapshot.get(scenario, request);
-                request_metrics_snapshot.inflight = request_metrics.inflight;
-                request_metrics_snapshot.total = request_metrics.total;
-                request_metrics_snapshot.successful =
-                    request_metrics.successful;
-                request_metrics_snapshot.failed = request_metrics.failed;
-                if !request_metrics.histogram.is_empty() {
-                    request_metrics_snapshot.min = Some(Duration::from_nanos(
-                        request_metrics.histogram.min(),
-                    ));
-                    request_metrics_snapshot.max = Some(Duration::from_nanos(
-                        request_metrics.histogram.max(),
-                    ));
-                    request_metrics_snapshot.mean =
-                        Some(Duration::from_nanos(round_f64_to_u64_nanos(
-                            request_metrics.histogram.mean(),
-                        )));
-                    request_metrics_snapshot.p50 = Some(Duration::from_nanos(
-                        request_metrics.histogram.value_at_quantile(0.50),
-                    ));
-                    request_metrics_snapshot.p90 = Some(Duration::from_nanos(
-                        request_metrics.histogram.value_at_quantile(0.90),
-                    ));
-                    request_metrics_snapshot.p99 = Some(Duration::from_nanos(
-                        request_metrics.histogram.value_at_quantile(0.99),
-                    ));
+                for (request, request_metrics) in
+                    scenario_metrics.requests_metrics.iter()
+                {
+                    let request_metrics_snapshot =
+                        grouped_metrics_snapshot.get(scenario, request);
+                    request_metrics_snapshot.inflight =
+                        request_metrics.inflight;
+                    request_metrics_snapshot.total = request_metrics.total;
+                    request_metrics_snapshot.successful =
+                        request_metrics.successful;
+                    request_metrics_snapshot.failed = request_metrics.failed;
+                    if !request_metrics.histogram.is_empty() {
+                        request_metrics_snapshot.min =
+                            Some(Duration::from_nanos(
+                                request_metrics.histogram.min(),
+                            ));
+                        request_metrics_snapshot.max =
+                            Some(Duration::from_nanos(
+                                request_metrics.histogram.max(),
+                            ));
+                        request_metrics_snapshot.mean = Some(
+                            Duration::from_nanos(round_f64_to_u64_nanos(
+                                request_metrics.histogram.mean(),
+                            )),
+                        );
+                        request_metrics_snapshot.p50 =
+                            Some(Duration::from_nanos(
+                                request_metrics
+                                    .histogram
+                                    .value_at_quantile(0.50),
+                            ));
+                        request_metrics_snapshot.p90 =
+                            Some(Duration::from_nanos(
+                                request_metrics
+                                    .histogram
+                                    .value_at_quantile(0.90),
+                            ));
+                        request_metrics_snapshot.p99 =
+                            Some(Duration::from_nanos(
+                                request_metrics
+                                    .histogram
+                                    .value_at_quantile(0.99),
+                            ));
+                    }
                 }
             }
         }
+        let dropped_requests = self.dropped_requests.lock().await;
         for ((scenario, request), count) in dropped_requests.iter() {
             let request_metrics_snapshot =
                 grouped_metrics_snapshot.get(scenario, request);
