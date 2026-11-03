@@ -1,0 +1,18 @@
+[package]
+name = "granita"
+description = "Open-loop load testing for Rust — reports schedule delay, so you know whether the p99 came from the server or from your load generator."
+keywords = ["load-testing", "benchmark", "performance", "http", "testing"]
+categories = ["development-tools::testing", "network-programming"]
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+readme = "../../README.md"
+repository.workspace = true
+
+[lints]
+workspace = true
+
+[dependencies]
+
+[dev-dependencies]
